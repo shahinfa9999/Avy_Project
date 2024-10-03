@@ -2,6 +2,14 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import os
+def clear_file_if_not_empty(file_path):
+    # Check if the file exists
+    if os.path.isfile(file_path):
+        # Check if the file is not empty
+        if os.path.getsize(file_path) > 0:
+            with open(file_path, 'w') as file:
+                # Clear the file by opening it in write mode
+                file.truncate()  # This line is actually optional as 'w' mode clears the file
 
 # URL of the point forecasts page
 url = "https://looper.avalanche.state.co.us/weather/ptfcst-new.php?model=nam&nfcst=24"
@@ -27,13 +35,16 @@ if not os.path.exists('downloaded_images'):
     os.makedirs('downloaded_images')
 if not os.path.exists('downloaded_txt_files'):
     os.makedirs('downloaded_txt_files')
+clear_file_if_not_empty('downloaded_images')
+clear_file_if_not_empty('downloaded_txt_files')
 
 # Process all anchors
 for anchor in anchors:
     href_attr = anchor['href']
+    print(href_attr)
 
     # Check if it's a .txt file
-    if href_attr.endswith('.txt'):
+    if '.txt' in href_attr:
         txt_url = base_url + href_attr
         print(f"Downloading {txt_url}")
         
