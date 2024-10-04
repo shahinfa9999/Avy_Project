@@ -1,13 +1,15 @@
 #import Avalanche_Conditions as AC
 import os
 import pandas as pd
+import re
+import matplotlib.pyplot as plt
 
 import sqlite3
 
 # Create a connection to SQLite database
 conn = sqlite3.connect('weather_data.db')
 cursor = conn.cursor()
-
+cursor.execute('DELETE FROM weather_conditions')
 # Create the table to store the data
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS weather_conditions (
@@ -29,6 +31,13 @@ CREATE TABLE IF NOT EXISTS weather_conditions (
 )
 ''')
 
+# Regex pattern to extract the wind information, precipitation, and snowfall
+pattern = r'(\d{2}/\d{2}/\d{4})\s+(\d{2}:\d{2})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d{3})/(\d{2})\s+(\d+)\s+(\d{3})\s+(\d{2}\.\d{2})\s+(\d{2}\.\d{2})\s+(\d{1}\.\d)\s+(\d+)'
+
+# Example line: 10/03/2024 18:00 66 22 18 280/04 6 999 99.0 CLEAR 0.00 0.00 0.0 45
+line = "10/03/2024 18:00  66  22  18 280/04   6 999 99.0 CLEAR     0.00  0.00  0.0   45"
+
+
 # Read the file
 for filename in os.listdir('downloaded_txt_files'):
     with open(os.path.join('downloaded_txt_files', filename)) as file:
@@ -44,16 +53,14 @@ for filename in os.listdir('downloaded_txt_files'):
                 dew_point = line.split(" ")[5].strip()
                 relative_humidity = line.split(" ")[7].strip()
                 wind_dir = line.split(" ")[8].strip().split("/")[0]
-                wind_speed = line.split("/")[3].strip()
-                gust_wind_speed = line.split(" ")[11].strip()
+                wind_speed = line.split()[5].strip().split("/")[1]
+                gust_wind_speed = line.split()[6].strip()
                 #Non_Convective_Precipitation
-                ncpcp = line.split(" ")[19]
-                #print(ncpcp)
+                ncpcp = line.split()[10]
                 #convective_precipitation
-                cncpcp = line.split(" ")[21]
-                #print(cncpcp)
+                cncpcp = line.split()[11]
                 #snowfall
-                snowfall = line.split(" ")[23]
+                snowfall = line.split()[12]
                 #print(snowfall)
                 # Insert the data into the table
 
@@ -100,3 +107,44 @@ def get_data_by_location(location):
 
 # Example: Get data for a specific location, e.g., 'Denver'
 get_data_by_location('DENVER')
+
+# Connect to the SQLite database
+conn = sqlite3.connect('weather_data.db')
+
+# Query to fetch data for a specific location, e.g., 'DENVER'
+location = 'DENVER'
+query = f'''
+SELECT date, time, temp, dew_point, relative_humidity
+FROM weather_conditions 
+WHERE location = '{location}'
+'''
+
+# Load the data into a Pandas DataFrame
+df = pd.read_sql_query(query, conn)
+
+# Close the connection
+conn.close()
+
+# Display the DataFrame (for debugging purposes)
+print(df.head())
+
+# Ensure that the 'date' column is in datetime format
+df['datetime'] = pd.to_datetime(df['date'] + ' ' + df['time'])
+
+# Plotting the temperature over time
+plt.figure(figsize=(12, 6))
+plt.plot(df['datetime'], df['temp'], label='Temperature (°F)', color='orange')
+plt.plot(df['datetime'], df['dew_point'], label='Dew Point (°F)', color='blue')
+plt.fill_between(df['datetime'], df['temp'], df['dew_point'], color='lightblue', alpha=0.5)
+
+# Formatting the plot
+plt.title(f"Weather Conditions for {location}")
+plt.xlabel('Date and Time')
+plt.ylabel('Temperature (°F) & Dew Point (°F)')
+plt.legend()
+plt.xticks(rotation=45)
+plt.grid()
+plt.tight_layout()
+
+# Show the plot
+plt.show()
