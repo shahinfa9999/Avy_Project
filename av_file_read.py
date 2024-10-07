@@ -105,13 +105,9 @@ def get_data_by_location(location):
     # Close the connection after querying
     conn.close()
 
-# Example: Get data for a specific location, e.g., 'Denver'
-get_data_by_location('BOULDER')
-
-
 
 # Query to fetch data for a specific location, e.g., 'DENVER'
-location = 'BOULDER'
+#location = 'BOULDER'
 def plotting_data(location):
     # Connect to the SQLite database
     conn = sqlite3.connect('weather_data.db')
@@ -150,5 +146,5 @@ def plotting_data(location):
 
     # Show the plot
     plt.show()
-plotting_data(location)
+
 

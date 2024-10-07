@@ -1,60 +1,119 @@
 from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QVBoxLayout, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QMessageBox
+from PyQt5.QtCore import Qt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 import sys
-import requests
 import sqlite3
+import pandas as pd
 
-class WeatherApp(QtWidgets.QWidget):
+class DataViewer(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.init_ui()
+        self.initUI()
 
-    def init_ui(self):
-        self.setWindowTitle('Weather App')
+    def initUI(self):
+        self.setWindowTitle('City Data Viewer')
+        self.setGeometry(100, 100, 800, 600)
 
-        self.layout = QtWidgets.QVBoxLayout()
+        # Main layout
+        layout = QVBoxLayout()
 
-        self.city_input = QtWidgets.QLineEdit(self)
-        self.layout.addWidget(self.city_input)
+        # City input field
+        self.city_input = QLineEdit(self)
+        self.city_input.setPlaceholderText('Enter City Name')
+        layout.addWidget(self.city_input)
 
-        self.button = QtWidgets.QPushButton('Get Weather', self)
-        self.button.clicked.connect(self.get_weather)
-        self.layout.addWidget(self.button)
+        # Fetch data button
+        self.fetch_button = QPushButton('Fetch Data', self)
+        self.fetch_button.clicked.connect(self.fetch_data)
+        layout.addWidget(self.fetch_button)
 
-        self.weather_label = QtWidgets.QLabel(self)
-        self.layout.addWidget(self.weather_label)
+        # Table for displaying fetched data
+        self.table_widget = QTableWidget(self)
+        layout.addWidget(self.table_widget)
 
-        self.setLayout(self.layout)
+        # Matplotlib canvas for displaying plots
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+        layout.addWidget(self.canvas)
 
-    def get_weather(self):
-        city = self.city_input.text()  # Get the city from the input field
-        conn = sqlite3.connect('weather_data.db')  # Connect to your SQLite database
+        self.setLayout(layout)
+
+    def fetch_data(self):
+        city = self.city_input.text()
+        if not city:
+            QMessageBox.warning(self, 'Input Error', 'Please enter a city name')
+            return
+
+        # Connect to the SQLite database and fetch data for the specified city
+        conn = sqlite3.connect('weather_data.db')
         cursor = conn.cursor()
-        
-        # Query to fetch weather data for the specified city
-        cursor.execute('''
-            SELECT date, time, temp, dew_point, relative_humidity, wind_dir, wind_speed, gust_wind_speed, ncpcp, cncpcp, snowfall 
-            FROM weather_conditions WHERE location = ?
-        ''', (city,))
-        
-        weather_data = cursor.fetchall()  # Fetch all matching rows
-
-        # Check if any data was found
-        if weather_data:
-            # Format the output for the label
-            weather_info = ""
-            for row in weather_data:
-                weather_info += f"Date: {row[0]}, Time: {row[1]}, Temperature: {row[2]} °F, Dew Point: {row[3]} °F, "
-                weather_info += f"Relative Humidity: {row[4]}%, Wind Direction: {row[5]}, Wind Speed: {row[6]} mi/h, "
-                weather_info += f"Gust Wind Speed: {row[7]} mi/h, NCPCP: {row[8]}, CNCPCP: {row[9]}, Snowfall: {row[10]} in"
-            
-            self.weather_label.setText(weather_info)  # Update label with the weather info
-        else:
-            self.weather_label.setText("City not found in the database.")
-        
-        # Close the database connection
+        cursor.execute('SELECT * FROM weather_conditions WHERE location = ?', (city,))
+        rows = cursor.fetchall()
         conn.close()
 
-app = QtWidgets.QApplication(sys.argv)
-window = WeatherApp()
-window.show()
-sys.exit(app.exec_())
+        if not rows:
+            QMessageBox.information(self, 'No Data', 'No data found for the specified city')
+            return
+
+        # Populate the table widget with data
+        self.table_widget.setRowCount(len(rows))
+        self.table_widget.setColumnCount(len(rows[0]))
+        self.table_widget.setHorizontalHeaderLabels([
+            'ID', 'Location', 'Latitude', 'Longitude', 'Date', 'Time', 'Temp', 
+            'Dew Point', 'Relative Humidity', 'Wind Dir', 'Wind Speed', 
+            'Gust Wind Speed', 'NCPCP', 'CNCPCP', 'Snowfall'
+        ])
+
+        for row_idx, row_data in enumerate(rows):
+            for col_idx, col_data in enumerate(row_data):
+                self.table_widget.setItem(row_idx, col_idx, QTableWidgetItem(str(col_data)))
+
+        # Extract data for plotting
+        self.plot_data(city)
+
+    def plot_data(self, city):
+        # Fetch the weather data from the database for the specified city
+        conn = sqlite3.connect('weather_data.db')
+        query = '''
+        SELECT date, time, temp, dew_point, relative_humidity
+        FROM weather_conditions
+        WHERE location = ?
+        '''
+        df = pd.read_sql_query(query, conn, params=(city,))
+        conn.close()
+
+        if df.empty:
+            QMessageBox.information(self, 'No Data', 'No weather data available to plot')
+            return
+
+        # Convert date and time to a datetime object for plotting
+        df['datetime'] = pd.to_datetime(df['date'] + ' ' + df['time'])
+
+        # Clear any existing plots in the figure
+        self.figure.clear()
+
+        # Create an axis for the new plot
+        ax = self.figure.add_subplot(111)
+
+        # Plot the temperature and dew point
+        ax.plot(df['datetime'], df['temp'], label='Temperature (°F)', color='orange')
+        ax.plot(df['datetime'], df['dew_point'], label='Dew Point (°F)', color='blue')
+        ax.fill_between(df['datetime'], df['temp'], df['dew_point'], color='lightblue', alpha=0.5)
+
+        # Set labels, title, and legend
+        ax.set_title(f"Weather Conditions for {city}")
+        ax.set_xlabel('Date and Time')
+        ax.set_ylabel('Temperature (°F) & Dew Point (°F)')
+        ax.legend()
+        ax.grid()
+
+        # Refresh the canvas to display the updated plot
+        self.canvas.draw()
+
+if __name__ == '__main__':
+    app = QtWidgets.QApplication(sys.argv)
+    viewer = DataViewer()
+    viewer.show()
+    sys.exit(app.exec_())
