@@ -43,9 +43,9 @@ class WeatherApp(QtWidgets.QWidget):
             # Format the output for the label
             weather_info = ""
             for row in weather_data:
-                weather_info += f"Date: {row[0]}, Time: {row[1]}, Temperature: {row[2]} °C, Dew Point: {row[3]} °C, "
-                weather_info += f"Relative Humidity: {row[4]}%, Wind Direction: {row[5]}, Wind Speed: {row[6]} km/h, "
-                weather_info += f"Gust Wind Speed: {row[7]} km/h, NCPCP: {row[8]}, CNCPCP: {row[9]}, Snowfall: {row[10]} cm\n"
+                weather_info += f"Date: {row[0]}, Time: {row[1]}, Temperature: {row[2]} °F, Dew Point: {row[3]} °F, "
+                weather_info += f"Relative Humidity: {row[4]}%, Wind Direction: {row[5]}, Wind Speed: {row[6]} mi/h, "
+                weather_info += f"Gust Wind Speed: {row[7]} mi/h, NCPCP: {row[8]}, CNCPCP: {row[9]}, Snowfall: {row[10]} in"
             
             self.weather_label.setText(weather_info)  # Update label with the weather info
         else:

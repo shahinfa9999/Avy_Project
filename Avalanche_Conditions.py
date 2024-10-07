@@ -11,7 +11,7 @@ def clear_file_if_not_empty(file_path):
                 # Clear the file by opening it in write mode
                 file.truncate()  # This line is actually optional as 'w' mode clears the file
 
-def bs_co_av_parse(url,base_url):
+def bs_co_av_parse(url,base_url,city_name):
     # Make the HTTP request to get the page
     response = requests.get(url)
 
@@ -41,7 +41,7 @@ def bs_co_av_parse(url,base_url):
 
         # Check if it's a .txt file
         if '.txt' in href_attr:
-            txt_url = base_url + href_attr
+            txt_url = base_url + href_attrs
             print(f"Downloading {txt_url}")
             
             # Download the .txt file
@@ -62,7 +62,7 @@ def bs_co_av_parse(url,base_url):
             # Use regex to capture the URL and other parameters inside new_window()
             match = re.search(r"new_window\('([^']+)',\s*'([^']+)',\s*'([^']+)',\s*'([^']+)'\)", onclick_attr)
             
-            if match and '.txt' in match.group(1):
+            if match and '.txt' in match.group(1) and city_name.upper() in match.group(1):
                 relative_url = match.group(1)  # First group is the URL
                 full_url = base_url + relative_url
 
@@ -88,4 +88,25 @@ url = "https://looper.avalanche.state.co.us/weather/ptfcst-new.php?model=nam&nfc
 # Define the base URL
 base_url = "https://looper.avalanche.state.co.us/weather/"
 
-bs_co_av_parse(url,base_url)
+bs_co_av_parse(url,base_url,"Boulder")
+
+cities = [
+    "FARWELL", "MOSQLAKES", "MTWERNER", "PARKRANGE", "STEAMBOAT", "BEARLAKE", "BERTHPASS", "CAMERONPCO",
+    "ELDORA", "LOVELAND", "PIKESPEAK", "TUNNELS", "WINTERPARK", "FWAB", "BC_TOP", "BRECKENRDG", "COPPERMTN",
+    "KEYSTONE", "LVLNDPASS", "VAIL_PASS", "VAILSKI", "BATTLEMTN", "COTNWDPASS", "FREMONTPAS", "GALENAMT",
+    "INDEPPASS", "LCSAR", "LEADVILLE", "MONARCHPAS", "TWINLAKES", "AHIGHLANDS", "ASPENMTSA", "CHAIRMT",
+    "CHARLESPK", "MACEPEAK", "R_MCLURE", "MTNAST", "MTSOPRIS", "RASPRIDGE", "REDTABLEMT", "SCHOFIELD",
+    "SNOWMASS", "SUNLIGHT", "TAYLORPASS", "CBNORDIC", "CRESTEDBTE", "ELKTON", "FAIRVIEWPK", "FRIENDSHUT",
+    "GOTHIC", "CSIRWIN", "KEBLERPASS", "PARKCONE", "STARPASS", "WESTELKPK", "GRAND_MESA", "HORSEMT", 
+    "NMAMMPK", "POWDERHORN", "SKYWAYPT", "SPRUCEMT", "BLUELAKES", "BURNHUT", "FULLER", "GRANDTURK", 
+    "LAKECITY", "LDHUT", "LIZHEADPAS", "MOLASPASS", "MONUMENT", "MTABRAMS", "NORTHPOLE", "PUTNEY", 
+    "RMP", "RICHMNDBAS", "RICO", "RIDGWAYHUT", "SILVERTON", "SLUMGULPAS", "STONEY", "SYDNEYBASN", 
+    "TELLURIDE", "COALBANKPS", "COLUMBUSBA", "CUMBRESPAS", "MIDDLECRK", "PAGOSASPGS", "PASSCKYURT", 
+    "PURGATORY", "VALLECITO", "WOLFCKPASS", "BLANCAPK", "BUSHNELLPK", "RITOALTOPK", "SANGRERNGE", 
+    "AKRON", "ARVADA", "BENNETT", "BLUECKCAN", "BOULDER", "BRANSON", "BRIGGSDALE", "CALHAN", 
+    "CASTLEPK", "CEDAREDGE", "COLLBRAN", "CONIFER", "DENVER", "DOUGLASPAS", "ESTESPARK", 
+    "FTCOLLINS", "FORTMORGAN", "GLENWDCAN", "GREELEY", "GREENMTNWY", "HENDERSON", "KITCARSON", 
+    "LAJUNTA", "LAMAR", "LASTCHANCE", "LIMON", "MONUMENTPS", "ORDWAY", "PAWNEE", "PRITCHETT", 
+    "PUEBLO", "PUNKIN", "STERLING", "TAOSSP", "THATCHER", "TRINIDAD", "WALSENBURG", "WELLINGTON"
+]
+

@@ -1,4 +1,4 @@
-#import Avalanche_Conditions as AC
+import Avalanche_Conditions as AC
 import os
 import pandas as pd
 import re
@@ -106,45 +106,49 @@ def get_data_by_location(location):
     conn.close()
 
 # Example: Get data for a specific location, e.g., 'Denver'
-get_data_by_location('DENVER')
+get_data_by_location('BOULDER')
 
-# Connect to the SQLite database
-conn = sqlite3.connect('weather_data.db')
+
 
 # Query to fetch data for a specific location, e.g., 'DENVER'
-location = 'DENVER'
-query = f'''
-SELECT date, time, temp, dew_point, relative_humidity
-FROM weather_conditions 
-WHERE location = '{location}'
-'''
+location = 'BOULDER'
+def plotting_data(location):
+    # Connect to the SQLite database
+    conn = sqlite3.connect('weather_data.db')
+    query = f'''
+    SELECT date, time, temp, dew_point, relative_humidity
+    FROM weather_conditions 
+    WHERE location = '{location}'
+    '''
 
-# Load the data into a Pandas DataFrame
-df = pd.read_sql_query(query, conn)
+    # Load the data into a Pandas DataFrame
+    df = pd.read_sql_query(query, conn)
 
-# Close the connection
-conn.close()
+    # Close the connection
+    conn.close()
 
-# Display the DataFrame (for debugging purposes)
-print(df.head())
+    # Display the DataFrame (for debugging purposes)
+    print(df.head())
 
-# Ensure that the 'date' column is in datetime format
-df['datetime'] = pd.to_datetime(df['date'] + ' ' + df['time'])
+    # Ensure that the 'date' column is in datetime format
+    df['datetime'] = pd.to_datetime(df['date'] + ' ' + df['time'])
 
-# Plotting the temperature over time
-plt.figure(figsize=(12, 6))
-plt.plot(df['datetime'], df['temp'], label='Temperature (°F)', color='orange')
-plt.plot(df['datetime'], df['dew_point'], label='Dew Point (°F)', color='blue')
-plt.fill_between(df['datetime'], df['temp'], df['dew_point'], color='lightblue', alpha=0.5)
+    # Plotting the temperature over time
+    plt.figure(figsize=(12, 6))
+    plt.plot(df['datetime'], df['temp'], label='Temperature (°F)', color='orange')
+    plt.plot(df['datetime'], df['dew_point'], label='Dew Point (°F)', color='blue')
+    plt.fill_between(df['datetime'], df['temp'], df['dew_point'], color='lightblue', alpha=0.5)
 
-# Formatting the plot
-plt.title(f"Weather Conditions for {location}")
-plt.xlabel('Date and Time')
-plt.ylabel('Temperature (°F) & Dew Point (°F)')
-plt.legend()
-plt.xticks(rotation=45)
-plt.grid()
-plt.tight_layout()
+    # Formatting the plot
+    plt.title(f"Weather Conditions for {location}")
+    plt.xlabel('Date and Time')
+    plt.ylabel('Temperature (°F) & Dew Point (°F)')
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.grid()
+    plt.tight_layout()
 
-# Show the plot
-plt.show()
+    # Show the plot
+    plt.show()
+plotting_data(location)
+
