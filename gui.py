@@ -1,11 +1,13 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QVBoxLayout, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QMessageBox
+from PyQt5.QtWidgets import QVBoxLayout, QComboBox, QPushButton, QTableWidget, QTableWidgetItem, QMessageBox
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import sys
 import sqlite3
 import pandas as pd
+from Avalanche_Conditions import bs_co_av_parse
+from av_file_read import get_data_by_location
 
 class DataViewer(QtWidgets.QWidget):
     def __init__(self):
@@ -19,10 +21,30 @@ class DataViewer(QtWidgets.QWidget):
         # Main layout
         layout = QVBoxLayout()
 
-        # City input field
-        self.city_input = QLineEdit(self)
-        self.city_input.setPlaceholderText('Enter City Name')
-        layout.addWidget(self.city_input)
+        # City selection dropdown
+        self.city_combobox = QComboBox(self)
+        self.city_combobox.addItems([
+            "FARWELL", "MOSQLAKES", "MTWERNER", "PARKRANGE", "STEAMBOAT", "BEARLAKE", "BERTHPASS",
+            "CAMERONPCO", "ELDORA", "LOVELAND", "PIKESPEAK", "TUNNELS", "WINTERPARK", "FWAB", "BC_TOP",
+            "BRECKENRDG", "COPPERMTN", "KEYSTONE", "LVLNDPASS", "VAIL_PASS", "VAILSKI", "BATTLEMTN",
+            "COTNWDPASS", "FREMONTPAS", "GALENAMT", "INDEPPASS", "LCSAR", "LEADVILLE", "MONARCHPAS",
+            "TWINLAKES", "AHIGHLANDS", "ASPENMTSA", "CHAIRMT", "CHARLESPK", "MACEPEAK", "R_MCLURE",
+            "MTNAST", "MTSOPRIS", "RASPRIDGE", "REDTABLEMT", "SCHOFIELD", "SNOWMASS", "SUNLIGHT",
+            "TAYLORPASS", "CBNORDIC", "CRESTEDBTE", "ELKTON", "FAIRVIEWPK", "FRIENDSHUT", "GOTHIC",
+            "CSIRWIN", "KEBLERPASS", "PARKCONE", "STARPASS", "WESTELKPK", "GRAND_MESA", "HORSEMT",
+            "NMAMMPK", "POWDERHORN", "SKYWAYPT", "SPRUCEMT", "BLUELAKES", "BURNHUT", "FULLER",
+            "GRANDTURK", "LAKECITY", "LDHUT", "LIZHEADPAS", "MOLASPASS", "MONUMENT", "MTABRAMS",
+            "NORTHPOLE", "PUTNEY", "RMP", "RICHMNDBAS", "RICO", "RIDGWAYHUT", "SILVERTON", "SLUMGULPAS",
+            "STONEY", "SYDNEYBASN", "TELLURIDE", "COALBANKPS", "COLUMBUSBA", "CUMBRESPAS", "MIDDLECRK",
+            "PAGOSASPGS", "PASSCKYURT", "PURGATORY", "VALLECITO", "WOLFCKPASS", "BLANCAPK", "BUSHNELLPK",
+            "RITOALTOPK", "SANGRERNGE", "AKRON", "ARVADA", "BENNETT", "BLUECKCAN", "BOULDER", "BRANSON",
+            "BRIGGSDALE", "CALHAN", "CASTLEPK", "CEDAREDGE", "COLLBRAN", "CONIFER", "DENVER", "DOUGLASPAS",
+            "ESTESPARK", "FTCOLLINS", "FORTMORGAN", "GLENWDCAN", "GREELEY", "GREENMTNWY", "HENDERSON",
+            "KITCARSON", "LAJUNTA", "LAMAR", "LASTCHANCE", "LIMON", "MONUMENTPS", "ORDWAY", "PAWNEE",
+            "PRITCHETT", "PUEBLO", "PUNKIN", "STERLING", "TAOSSP", "THATCHER", "TRINIDAD", "WALSENBURG",
+            "WELLINGTON"
+        ])
+        layout.addWidget(self.city_combobox)
 
         # Fetch data button
         self.fetch_button = QPushButton('Fetch Data', self)
@@ -41,9 +63,18 @@ class DataViewer(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def fetch_data(self):
-        city = self.city_input.text()
+        # URL of the point forecasts page
+        url = "https://looper.avalanche.state.co.us/weather/ptfcst-new.php?model=nam&nfcst=24"
+
+        # Define the base URL
+        base_url = "https://looper.avalanche.state.co.us/weather/"
+        city = self.city_combobox.currentText()  # Get selected city from the combo box
+
+        bs_co_av_parse(url, base_url, city)
+        get_data_by_location(city)
+
         if not city:
-            QMessageBox.warning(self, 'Input Error', 'Please enter a city name')
+            QMessageBox.warning(self, 'Input Error', 'Please select a city')
             return
 
         # Connect to the SQLite database and fetch data for the specified city
