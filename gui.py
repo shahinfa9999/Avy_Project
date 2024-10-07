@@ -7,6 +7,7 @@ import sys
 import sqlite3
 import pandas as pd
 from Avalanche_Conditions import bs_co_av_parse
+from av_file_read import making_sql
 from av_file_read import get_data_by_location
 
 class DataViewer(QtWidgets.QWidget):
@@ -68,9 +69,14 @@ class DataViewer(QtWidgets.QWidget):
 
         # Define the base URL
         base_url = "https://looper.avalanche.state.co.us/weather/"
+
         city = self.city_combobox.currentText()  # Get selected city from the combo box
+        
+        
 
         bs_co_av_parse(url, base_url, city)
+        making_sql()
+
         get_data_by_location(city)
 
         if not city:
